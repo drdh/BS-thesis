@@ -29,32 +29,37 @@
 \copyrightpage
 
 \frontmatter
-\input{chapters/abstract.tex} % TODO: write abstract in the end
+\input{chapters/acknowledgements.tex} % TODO: [chap] write acknowledgement in the end
 \tableofcontents
+\input{chapters/abstract.tex} % TODO: [chap] write abstract in the end
 % \listoffigures
 % \listoftables
-\input{chapters/notation.tex}
+% \input{chapters/notation.tex}
 
 \mainmatter
 
 
-\input{chapters/introduction.tex}
+\input{chap/introduction.tex}
+\input{chap/backgroud.tex}
+\input{chap/method.tex}
+\input{chap/experiment.tex}
+\input{chap/summary.tex}
 
 
+\input{chapters/intro.tex}
 \input{chapters/floats.tex}
 \input{chapters/math.tex}
 \input{chapters/citations.tex}
 
 \backmatter
-\bibliographystyle{ustcthesis-numerical}  % 顺序编码制
-% \bibliographystyle{ustcthesis-authoryear} % 著者出版年制
-% \bibliographystyle{ustcthesis-bachelor}   % 本科生参考文献的格式
+%\bibliographystyle{ustcthesis-numerical}  % 顺序编码制
+%\bibliographystyle{ustcthesis-authoryear} % 著者出版年制
+\bibliographystyle{ustcthesis-bachelor}   % 本科生参考文献的格式
 \bibliography{bib/ustc}
 
 \appendix
 \input{chapters/complementary.tex}
 
-\input{chapters/acknowledgements.tex}
-\input{chapters/publications.tex}
+%\input{chapters/publications.tex}
 
 \end{document}
