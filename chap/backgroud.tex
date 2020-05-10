@@ -9,14 +9,24 @@
 
 \section{多智能体强化学习及其算法简介}
 
-QMIX
+\section{星际争霸II实验环境简介}
+星际争霸II单元微操作任务~\cite{samvelyan2019starcraft}被认为是最具挑战性的协同多智能体基准测试环境，因为它它有很高的控制复杂度和环境随机性。
 
-CTDE
+许多算法\cite{foerster2017stabilising, foerster2018counterfactual, rashid2018qmix, mahajan2019maven}都是使用该环境训练测试的，本框架也是如此。
 
-\section{星际争霸2实验环境简介}
+其框架\footnote{\url{https://github.com/oxwhirl/pymarl}}可以开源获取。
+
+\section{背景知识}
+本项目考虑一个，完全协作的多智能体任务，这可以被建模成Dec-POMDP, 也就是~\cite{oliehoek2016concise}$G=\langle I, S, A, P, R, \Omega, O, n, \gamma\rangle$, 其中$A$是有限的动作空间, $I\equiv\{1,2,...,n\}$是有限的智能体集合, $\gamma\in[0, 1)$是discount factor,$s\in S$是环境真正的状态。这里考虑一个部分可观测的环境，智能体$i$只能观测到$o_i\in \Omega$, 这个观测来自观测函数$O(s, i)$. 每个智能体有个历史轨迹$\tau_i\in \Tau\equiv(\Omega\times A)^*$. 每个时间步，每个智能体$i$会选择一个动作$a_i\in A$, 和其他所有智能体的动作联合形成一个联合动作$\va$ $\in A^n$,然后根据转移函数$P(s'|s, \va)$会得到下一个状态$s'$，以及一个共享的激励$r=R(s,\va)$.联合策略函数$\bm{\pi}$能推导出一个联合的动作－值函数$Q_{tot}^{\bm{\pi}}(s,\va)=\mathbb{E}_{s_{0:\infty},\va_{0:\infty}}[\sum_{t=0}^\infty \gamma^{t}r_t|s_0=s,\va_0=\va,\bm{\pi}]$. 
+
+为了更高效地学习智能体的策略，集中训练，分离执行(Centralized Training with Decentralized Execution (CTDE)~\cite{foerster2016learning, foerster2018counterfactual}被广泛应用。一种很有前景的利用CTDE的方式是值函数分解~\cite{sunehag2018value, rashid2018qmix, son2019qtran}, 简要来说就是每个智能体学习一个分离的局部效用函数，然后用一个混合网络来结合这些局部的值，输出全局的动作－值信息。本项目也是利用CTDE框架，不同的是，局部效用函数不是完全共享的，也不是完全各自独立的，而是在相似角色的智能体之间共享。
 
 \section{相关工作与对比}
-正文和附录的related works
+角色的涌现已经在很多文献中有记录了，比如蜜蜂~\cite{jeanson2005emergence}, 蚂蚁~\cite{gordon1996organization}, 人类~\cite{butler2012condensed}等等。在这些系统中，角色和分工紧密相连，并且对提升劳动效率很有作用。同时，很多的多智能体系统受到了这些自然界的系统的启发。它们会分解任务，让有相同角色的智能体专注于某个子任务，以此来降低设计的复杂度~\cite{wooldridge2000gaia, omicini2000soda, padgham2002prometheus, pavon2003agent, cossentino2005passi, zhu2008role, spanoudakis2010using, deloach2010mase, bonjean2014adelfe}. 这些方法都被设计用于有清晰结构的任务，比如软件工程~\cite{bresciani2004tropos}. 因此，它们会预定义角色以及相关的子任务~\cite{ Lhaksmana2018role}。但是本框架是隐式地把角色概念引入多智能体的连续决定，并且环境是动态和未知的。
+
+深度多智能体强化学习在近几年有很大的进步。COMA~\citep{foerster2018counterfactual}, MADDPG~\citep{lowe2017multi}, PR2~\citep{wen2019probabilistic}, 和MAAC~\cite{iqbal2019actor}集中注意力在多智能体的策略梯度方法。另一条主线是关注基于值函数的多智能体强化学习， VDN~\citep{sunehag2018value}, QMIX~\citep{rashid2018qmix}, 和 QTRAN~\citep{son2019qtran}依次扩大了混合网络能表达的函数的范围。另一方面，涌现也是一个在深度多智能体强化学习逐渐引起重视的话题，相关的工作有交流的涌现~\cite{foerster2016learning, lazaridou2017multi, das2017learning, mordatch2018emergence}, 公平性的涌现~\cite{jiang2019learning}, 工具使用的涌现~\cite{baker2020emergent}, 这些涌也提供了一个用深度学习理解自然或者人工多智能体系统的新角度、
+
+为了学到多样化以及可识别的角色，本算法提出又换关于个人角色和轨迹的互信息，最近的一个研究多智能体探索的算法MAVEN~\cite{mahajan2019maven}也用了类似的目标函数。但是不同的是，MAVEN的目标是集体的探索，这是在高层次思想的不同，同样也造成了很多技术细节的不同。除此之外，在实验章节，也比较了本算法与MAVEN的性能不同。
 
 \section{本章小结}
 
