@@ -42,6 +42,8 @@
 
   本实验采用的基准实验和消融实验如表~\ref{tab:baselines}所示，ROMA(Role-Oriented MARL)代指本项目算法。其中，相关算法（见图~\ref{fig:performance-baselines}）是为了明确比较本算法和其他已有的算法的性能，可以看到本算法有相当优异的性能；消融-A实验中（见图~\ref{fig:performance-ablations-A}），ROMA-RAW是为了明确上一章所介绍的损失函数的有效性；QMIX-NPS是为了说明独立的效用函数并不能达到本项目算法的性能；QMIX-LAR是为了说明更多的参数不是本算法性能提升的主要原因；消融-B实验见图~\ref{fig:performance-ablations-B}）是为了明确各个损失函数对性能的影响。
 
+  测试的环境是星际争霸2微操作基准(SAMC~\cite{samvelyan2019starcraft}). 这个环境包括各种各样的地图，这些地图被分类成简单、难、很难几个级别。上面选取的环境都是难或者很难。为了评估准确，所有的实验都是使用了5的随机种子，结果的曲线是带有$95\%$的置信区间的。
+
 \begin{figure*}
     \includegraphics[width=\linewidth]{figures/learning-curve/learning_curve.pdf}
     \caption{ROMA与相关算法的性能对比}\label{fig:performance-baselines}
@@ -73,11 +75,52 @@
     \caption{在一局里角色的动态变化}\label{fig:dynamic_role-10m_vs_11m}
 \end{figure*}
 
+为了回答角色是否是为了使用环境动态变化的，这里展示几张由本算法执行的截图，使用的环境是星际争霸２微操作环境(SMAC), 选用的地图是$\mathtt{10m\_vs\_11m}$, 在这个环境里，操控10个Marines对抗11个敌对Marines. 正如图~\ref{fig:dynamic_role-10m_vs_11m}所示，尽管观测里包含很多的信息，比如智能体的位置、血量、护盾值、同盟信息、敌人信息等等，但是角色编码器还是学会了集中注意力到部分关键的信息，并且这种注意力会随着环境的改变，动态地变化，这就是所谓的角色的动态变化。
 
+具体来说，在刚开始$t$=$1$的时候，智能体们需要组织成为一个凹面的弧形，这样能最大化它们对敌人的射击范围，使得每个智能体都能射击到敌人最前面的那一行。可以从角色空间看到的是智能体角色的排布是根据它们的相对位置，如此根据这样的特化的策略能更快地形成上面提到的弧形站位。在战役的中间，一个很有用的策略是保护受伤严重的智能体，让它们后撤，这样能最大限度地保存战力，消灭敌人。可以从图中看到，在$t$=$8$, $19$, $27$的时候，智能体的角色决定于它自己的血量，血量高的智能体角色和其他智能体的角色相距很远。这样的表征会导致不同的策略：也就是血量高的智能体会向前移，吸引更多的火力，而其他的血量低的会后撤，从后方攻击。与此同时，也能发现同样的角色会因为位置相近而聚集在一起，比如智能体$3$和$8$在$t$=$19$的时候就聚在一起了。对应的策略是拥有不同角色的智能体会不断变换地吸引火力。除此之外，也能看到死亡的智能体会聚集在一起，并且数量不断增多，本质上来说，死亡是血量为$0$的极端情况。
+
+这个结果就说明，本算法能够学到动态的角色，并且角色会依据自己观测到的子任务（比如前进、后撤）自动聚集，这一点也和上一章提出的目标函数的目的一致。
 
 \section{角色的表征分析}\label{sec:role-representation}
+\begin{figure*}
+  \centering
+  \includegraphics[width=0.32\linewidth]{figures/various-roles/various_roles-g1.pdf}\hfill
+  \includegraphics[width=0.32\linewidth]{figures/various-roles/various_roles-g2.pdf}\hfill
+  \includegraphics[width=0.32\linewidth]{figures/various-roles/various_roles-g3.pdf}
+  \subfigure[策略：牺牲Zealots 9和7来消除Banelings的爆炸伤害。]{\includegraphics[width=0.32\linewidth]{figures/various-roles/various_roles-r1.pdf}\label{fig:various_roles-6s4z_vs_10b30z}}\hfill
+  \subfigure[策略：快速形成一个凹型的站位。]{\includegraphics[width=0.32\linewidth]{figures/various-roles/various_roles-r2.pdf}\label{fig:various_roles-27m_vs_30m}}\hfill
+  \subfigure[策略：绿色的Zerglings躲起来，然后Banelings用爆炸消灭大部分的敌人。]{\includegraphics[width=0.32\linewidth]{figures/various-roles/various_roles-r3.pdf}\label{fig:various_roles-6z4b}}
+  \caption{角色的表征}\label{fig:various_roles}
+  \note{地图$\mathtt{6s4z\_vs\_10b30z}$, $\mathtt{27m\_vs\_30m}$,和$\mathtt{6z4b}$学到的角色表征 (展示的是角色$\bm{\mu}_{\rho_i}$的均值，没有使用任何的降维)}
+\end{figure*}
+
+为了解释本算法的有效性，用图~\ref{fig:various_roles}来展示角色在角色空间的表征。注意到角色表示的是自动发现的胜利策略在隐层空间的表征、下面逐一说明。
+
+在地图$\mathtt{6s4z\_vs\_10b30z}$中，见图~\ref{fig:various_roles-6s4z_vs_10b30z}, 本算法学会了牺牲Zealots 9和7来杀死所有的敌对Banelings(爆炸的Banelings自己也会死)。具体来说，Zealots 9和7会一个接着一个地向前，然后和敌人同归于尽，但是其他智能体会远离，等待直到所有的Banelings爆炸结束。图~\ref{fig:various_roles-6s4z_vs_10b30z}就是完成第一个子任务时，9号智能体牺牲时的角色表征，可以看到它的角色和其他的相距很远，这就是意味着9的策略和其他的非常不一样，从具体的回放截图也可以证实这一点。
+
+对于地图$\mathtt{27m\_vs\_30m}$, 胜利策略是在战斗开始之初，交火之前，快速形成一个凹型的站位，图~\ref{fig:various_roles-27m_vs_30m}正是诠释了这一点，这里展示的是$t$=$1$的时刻的角色表征，智能体们正准备形成攻击站位。从角色空间也可以看到角色按照的是智能体的相对位置在聚集，这样的不同的表征会导致不同的移动策略，继而能迅速形成凹型站位，并且不发生冲突。
+
+对于地图$\mathtt{6z4b}$, 胜利策略是Zerglinss 4和5以及Banelings杀掉其他大部分的敌人，这里是利用Banelings的爆炸。同时，Zerglings 6-9会躲远，直到爆炸结束，然后再去杀掉生下来的敌人。图~\ref{fig:various_roles-6z4b}显示的是在爆炸之前的角色表征，可以看到角色正是按照发现的子任务在聚集。
+
+通过这些结果的证实，可以得出结论的是，本算法会自动地分解任务，并且能学到足够通用的角色，每个角色承担这样一个子任务。
 
 \section{角色的演化与涌现}\label{sec:role-evolution}
+
+\subsection{异质环境中角色的演化与涌现}
+\begin{figure*}
+  \centering
+  \includegraphics[width=\linewidth]{figures/evolution/evolution_MMM2.png}
+  \caption{角色在$\mathtt{MMM2}$中的演化与涌现}
+  \label{fig:role_evolution-heter}
+  \note{展示的是$t$=$1$的角色分布的$\bm{\mu}_{\rho_i}$的均值，无任何降维。}
+\end{figure*}
+
+\subsection{同质环境中角色的演化与涌现}
+\begin{figure*}
+  \includegraphics[width=\linewidth]{figures/evolution/evolution_10m_vs_11m.png}
+  \caption{角色在$\mathtt{10m\_vs\_11m}$中的演化与涌现}\label{fig:role_evolution-homo}
+\end{figure*}
+
 
 \section{实验配置细节}\label{sec:exp-detail}
 
